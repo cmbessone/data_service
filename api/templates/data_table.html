@@ -1,0 +1,27 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Uploaded MongoDB Data</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <style>
+        .table-container {
+            max-height: 1050px; /* Adjust height as needed */
+            overflow-y: auto; /* Enable vertical scrollbar */
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Uploaded MongoDB Data</h2>
+
+        <div class="table-container">
+            {% if table_html %}
+                {{ table_html|safe }}
+            {% else %}
+                <p>No data to display.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

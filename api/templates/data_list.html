@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Uploaded MongoDB Data</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        .summary {
+            padding: 20px;
+            border-bottom: 2px solid #ddd;
+            resize: vertical;
+            overflow: auto;
+            min-height: 100px;
+            max-height: 300px;
+        }
+        .table-container {
+            flex: 1;
+            overflow: auto;
+            resize: none;
+        }
+        .resizable {
+            position: relative;
+        }
+        .resizable .resizer {
+            height: 5px;
+            background: #ddd;
+            cursor: ns-resize;
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="summary resizable">
+            <h4>Summary</h4>
+            <p><strong>Total Records:</strong> {{ total_records }}</p>
+            <p><strong>New Records:</strong> {{ new_records }}</p>
+            <div class="resizer"></div>
+        </div>
+
+        <div class="table-container">
+            {% if table_html %}
+                {{ table_html|safe }}
+            {% else %}
+                <p>No data to display.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const resizable = document.querySelector('.resizable');
+        const resizer = document.querySelector('.resizer');
+        let y = 0;
+        let h = 0;
+
+        const mouseDownHandler = function(e) {
+            y = e.clientY;
+            h = resizable.offsetHeight;
+
+            document.addEventListener('mousemove', mouseMoveHandler);
+            document.addEventListener('mouseup', mouseUpHandler);
+        };
+
+        const mouseMoveHandler = function(e) {
+            const dy = e.clientY - y;
+            resizable.style.height = `${h + dy}px`;
+        };
+
+        const mouseUpHandler = function() {
+            document.removeEventListener('mousemove', mouseMoveHandler);
+            document.removeEventListener('mouseup', mouseUpHandler);
+        };
+
+        resizer.addEventListener('mousedown', mouseDownHandler);
+    </script>
+</body>
+</html>

@@ -4,14 +4,15 @@
     <title>Upload CSV</title>
 </head>
 <body>
-    <h1>Upload CSV</h1>
-        <form id="uploadForm" enctype="multipart/form-data">
-        <input type="file" id="fileInput" name="file"><br><br>
+    <h1>Upload CSV File</h1>
+        <form id="uploadForm" enctype="multipart/form-data" method="post">
+        {% csrf_token %}
+        <input type="file" id="fileInput" name="file" required><br><br>
         <input type="submit" value="Upload">
     </form>
     <script>
         document.getElementById('uploadForm').addEventListener('submit', function(event) {
-            event.preventDefault();
+            // event.preventDefault();
             const fileInput = document.getElementById('fileInput');
             if (fileInput.files.length > 0) {
                 const file = fileInput.files[0];

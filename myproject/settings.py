@@ -11,7 +11,16 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from django.conf import settings
+
+
 import os
+
+# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'your_project.settings')
+# django.setup()
+
+
+
 from import_export.formats.base_formats import CSV, XLSX
 IMPORT_FORMATS = [CSV, XLSX]
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -55,7 +64,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+    'corsheaders',
     'import_export',
     'api',
     'rest_framework',
@@ -65,12 +74,16 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+#CORS authorization
+CORS_ALLOWED_ORIGINS = []
 
 ROOT_URLCONF = 'myproject.urls'
 
@@ -95,15 +108,24 @@ WSGI_APPLICATION = 'myproject.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+MONGODB_HOST = 'localhost'  # MongoDB server hostname or IP address
+MONGODB_PORT = 27017         # MongoDB port
+MONGODB_DATABASE_NAME = 'mydatabase'  # Name of your MongoDB database
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+    'default':{
+    'ENGINE' : 'djongo',
+    'NAME' : 'mydatabase',
     }
 }
-
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
