@@ -1,0 +1,15 @@
+<!-- menu.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Menu</title>
+</head>
+<body>
+    <h1>API Menu</h1>
+    <ul>
+        {% for endpoint in api_endpoints %}
+            <li><a href="{{ endpoint.url }}">{{ endpoint.name }}</a></li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

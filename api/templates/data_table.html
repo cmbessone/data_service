@@ -1,25 +1,18 @@
-
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Uploaded MongoDB Data</title>
+    <title>Data List</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
-    <style>
-        .table-container {
-            max-height: 1050px; /* Adjust height as needed */
-            overflow-y: auto; /* Enable vertical scrollbar */
-        }
-    </style>
 </head>
 <body>
     <div class="container mt-4">
-        <h2>Uploaded MongoDB Data</h2>
+        <h2>Data from Collection: {{ collection_name }}</h2>
 
-        <div class="table-container">
+        <div class="table-responsive">
             {% if table_html %}
                 {{ table_html|safe }}
             {% else %}
-                <p>No data to display.</p>
+                <p>No data available.</p>
             {% endif %}
         </div>
     </div>

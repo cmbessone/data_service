@@ -15,31 +15,53 @@ import pandas as pd
 import numpy as np
 from django.shortcuts import render
 from pymongo import MongoClient
+from django.urls import reverse
+
+
+#MENU VIEW
+
+class MenuView(View):
+    def get(self, request):
+        # Define aquí las URLs y nombres para tus APIs
+        api_endpoints = [
+            {'url': reverse('upload'), 'name': 'CSV Upload API'},
+            {'url': reverse('data-list'), 'name': 'Data List API'},
+            # Agrega aquí más APIs
+        ]
+
+        return render(request, 'menu.html', {'api_endpoints': api_endpoints})
 
 
 
 # UPLOAD CSV API
 class DataListView(APIView):
-    def get(self, request, format=None):
+    def get(self, request, collection_name=None, format=None):
         try:
             client = MongoClient(settings.MONGODB_HOST, settings.MONGODB_PORT)
             db = client[settings.MONGODB_DATABASE_NAME]
-            collection_name = 'uploaded_data'
-            collection = db[collection_name]
-
-            if db is None:
-                return Response("Database connection failed.", status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-            documents = list(collection.find({}))  # Query all documents from MongoDB
-
-            # Convert MongoDB documents to DataFrame
-            df = pd.DataFrame(documents)
+            
+            if collection_name:
+                collection = db[collection_name]
+                documents = list(collection.find({}))  # Query all documents from specified MongoDB collection
+                df = pd.DataFrame(documents)
+            else:
+                # If no collection_name is provided, fetch all collections or handle as needed
+                # For illustration, fetch all collections and show the first one
+                collections = db.list_collection_names()
+                if collections:
+                    collection = db[collections[0]]
+                    documents = list(collection.find({}))
+                    df = pd.DataFrame(documents)
+                else:
+                    # Handle case where there are no collections
+                    df = pd.DataFrame()
 
             # Convert DataFrame to HTML table
             table_html = df.to_html(classes='table table-bordered', index=False)
 
             context = {
-                'table_html': table_html
+                'table_html': table_html,
+                'collection_name': collection_name if collection_name else 'All Collections'  # Display collection name or indicate all collections
             }
 
             client.close()
@@ -50,55 +72,56 @@ class DataListView(APIView):
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
 
-
 # Define the CSVUploadView class as a subclass of APIView
 class CSVUploadView(APIView):
-    parser_classes = [MultiPartParser, FormParser]  # Specify parser classes for file upload
-    template_name = 'uploads.html'  # Template name for rendering (optional)
+    parser_classes = [MultiPartParser, FormParser]
+    template_name = 'uploads.html'
 
-    # GET request handler to render an HTML form (optional)
     def get(self, request, format=None):
         return render(request, self.template_name)
 
-    # POST request handler to process CSV file upload
     def post(self, request, format=None):
-        file_obj = request.FILES.get('file')  # Retrieve uploaded file from request
+        file_obj = request.FILES.get('file')
+        collection_name = request.POST.get('collection_name')
 
         if not file_obj:
             return Response("No file attached.", status=status.HTTP_400_BAD_REQUEST)
-
+        
+        if not collection_name:
+            return Response("No collection name provided.", status=status.HTTP_400_BAD_REQUEST)
+       
         try:
-            df = pd.read_csv(file_obj)  # Read CSV file into pandas DataFrame
-            df.fillna(value="", inplace=True)  # Fill NaN values with empty string (optional)
+            df = pd.read_csv(file_obj)
+            df.fillna(value="", inplace=True)
 
-            collection_name = 'uploaded_data'  # MongoDB collection name
-
-            # Insert DataFrame records into MongoDB collection
             self.insert_dataframe_to_mongodb(df, collection_name)
 
             return Response("Data saved successfully", status=status.HTTP_201_CREATED)
 
+        except pd.errors.EmptyDataError:
+            return Response("Empty file provided.", status=status.HTTP_400_BAD_REQUEST)
+
+        except pd.errors.ParserError as e:
+            return Response(f"Error parsing CSV file: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+
         except Exception as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
-    # Method to insert DataFrame records into MongoDB collection
     def insert_dataframe_to_mongodb(self, df, collection_name):
-        # Connect to MongoDB (adjust connection details as needed)
-        client = MongoClient(settings.MONGODB_HOST, settings.MONGODB_PORT)
-        db = client[settings.MONGODB_DATABASE_NAME]
-        collection = db[collection_name]
+        try:
+            client = MongoClient(settings.MONGODB_HOST, settings.MONGODB_PORT)
+            db = client[settings.MONGODB_DATABASE_NAME]
+            collection = db[collection_name]
 
-        if db is None:
-            raise ValueError("Failed to connect to the database.")
+            # Convert DataFrame records to a list of dictionaries
+            data = df.to_dict(orient='records')
 
-        # Convert DataFrame records to a list of dictionaries
-        data = df.to_dict(orient='records')
+            # Insert records into MongoDB collection
+            collection.insert_many(data)
 
-        # Insert records into MongoDB collection
-        collection.insert_many(data)
+        finally:
+            client.close()
 
-        # Close MongoDB connection
-        client.close()
 
 
 # ITEM API
