@@ -8,11 +8,11 @@ from . import views
 
 
 urlpatterns = [
-    path('', views.getData),
+    #path('', views.getData),
     path(
     	'openapi', get_schema_view(title='myproject',description='API for SPO'),
     	name='upload',),
-    path('menu/', views.MenuView.as_view(), name='menu'),
+    path('', views.MenuView.as_view(), name='menu'),
     path('add/', views.addItem),
     path('upload/', views.CSVUploadView.as_view(), name='upload'),
     path('data-list/', views.DataListView.as_view(), name='data-list'),  # Ruta sin parámetros

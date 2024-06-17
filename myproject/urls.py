@@ -7,7 +7,6 @@ from api.views import CSVUploadView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('api.urls')),
-    
 ] 
 
 if settings.DEBUG:
