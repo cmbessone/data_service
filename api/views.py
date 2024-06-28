@@ -8,7 +8,7 @@ from rest_framework.decorators import api_view, parser_classes
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework import status 
+from rest_framework import status
 from base.models import Item, File
 from .serializers import ItemSerializer, FileSerializer
 import pandas as pd
@@ -16,33 +16,65 @@ import numpy as np
 from django.shortcuts import render
 from pymongo import MongoClient
 from django.urls import reverse
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 
 
-#MENU VIEW
+# MENU VIEW
+
 
 class MenuView(View):
     def get(self, request):
         # Define aquí las URLs y nombres para tus APIs
         api_endpoints = [
-            {'url': reverse('upload'), 'name': 'CSV Upload API'},
-            {'url': reverse('data-list'), 'name': 'Data List API'},
+            {"url": reverse("upload"), "name": "CSV Upload API"},
+            {"url": reverse("data-list"), "name": "Data List API"},
             # Agrega aquí más APIs
         ]
 
-        return render(request, 'menu.html', {'api_endpoints': api_endpoints})
-
+        return render(request, "menu.html", {"api_endpoints": api_endpoints})
 
 
 # UPLOAD CSV API
 class DataListView(APIView):
+    @swagger_auto_schema(
+        operation_description="Permite listar los dataset ",
+        tags=["Data-List"],
+        manual_parameters=[
+            openapi.Parameter(
+                "param1",
+                openapi.IN_QUERY,
+                description="Description of param1",
+                type=openapi.TYPE_STRING,
+            ),
+            openapi.Parameter(
+                "param2",
+                openapi.IN_QUERY,
+                description="Description of param2",
+                type=openapi.TYPE_INTEGER,
+            ),
+        ],
+        responses={
+            200: openapi.Response(
+                "Success",
+                openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={"message": openapi.Schema(type=openapi.TYPE_STRING)},
+                ),
+            )
+        },
+    )
+    # @swagger_auto_schema(tags=["my custom tag"])
     def get(self, request, collection_name=None, format=None):
         try:
             client = MongoClient(settings.MONGODB_HOST, settings.MONGODB_PORT)
             db = client[settings.MONGODB_DATABASE_NAME]
-            
+
             if collection_name:
                 collection = db[collection_name]
-                documents = list(collection.find({}))  # Query all documents from specified MongoDB collection
+                documents = list(
+                    collection.find({})
+                )  # Query all documents from specified MongoDB collection
                 df = pd.DataFrame(documents)
             else:
                 # If no collection_name is provided, fetch all collections or handle as needed
@@ -57,17 +89,19 @@ class DataListView(APIView):
                     df = pd.DataFrame()
 
             # Convert DataFrame to HTML table
-            table_html = df.to_html(classes='table table-bordered', index=False)
+            table_html = df.to_html(classes="table table-bordered", index=False)
 
             context = {
-                'table_html': table_html,
-                'collection_name': collection_name if collection_name else 'All Collections'  # Display collection name or indicate all collections
+                "table_html": table_html,
+                "collection_name": (
+                    collection_name if collection_name else "All Collections"
+                ),  # Display collection name or indicate all collections
             }
 
             client.close()
 
-            return render(request, 'data_table.html', context)
-        
+            return render(request, "data_table.html", context)
+
         except Exception as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
 
@@ -75,21 +109,23 @@ class DataListView(APIView):
 # Define the CSVUploadView class as a subclass of APIView
 class CSVUploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
-    template_name = 'uploads.html'
+    template_name = "uploads.html"
 
     def get(self, request, format=None):
         return render(request, self.template_name)
 
     def post(self, request, format=None):
-        file_obj = request.FILES.get('file')
-        collection_name = request.POST.get('collection_name')
+        file_obj = request.FILES.get("file")
+        collection_name = request.POST.get("collection_name")
 
         if not file_obj:
             return Response("No file attached.", status=status.HTTP_400_BAD_REQUEST)
-        
+
         if not collection_name:
-            return Response("No collection name provided.", status=status.HTTP_400_BAD_REQUEST)
-       
+            return Response(
+                "No collection name provided.", status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
             df = pd.read_csv(file_obj)
             df.fillna(value="", inplace=True)
@@ -102,7 +138,9 @@ class CSVUploadView(APIView):
             return Response("Empty file provided.", status=status.HTTP_400_BAD_REQUEST)
 
         except pd.errors.ParserError as e:
-            return Response(f"Error parsing CSV file: {str(e)}", status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                f"Error parsing CSV file: {str(e)}", status=status.HTTP_400_BAD_REQUEST
+            )
 
         except Exception as e:
             return Response(str(e), status=status.HTTP_400_BAD_REQUEST)
@@ -114,7 +152,7 @@ class CSVUploadView(APIView):
             collection = db[collection_name]
 
             # Convert DataFrame records to a list of dictionaries
-            data = df.to_dict(orient='records')
+            data = df.to_dict(orient="records")
 
             # Insert records into MongoDB collection
             collection.insert_many(data)
@@ -123,33 +161,36 @@ class CSVUploadView(APIView):
             client.close()
 
 
-
 # ITEM API
 
-@api_view(['GET'])
+
+@api_view(["GET"])
 def getData(request):
-	items = Item.objects.all()
-	serializer = ItemSerializer(items, many =True)
-	return Response(serializer.data)
+    items = Item.objects.all()
+    serializer = ItemSerializer(items, many=True)
+    return Response(serializer.data)
 
-@api_view(['POST'])
+
+@api_view(["POST"])
 def addItem(request):
-	serializer = ItemSerializer(data=request.data)
-	if serializer.is_valid():
-		serializer.save()
-	return Response(serializer.data)
+    serializer = ItemSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+    return Response(serializer.data)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 @parser_classes([MultiPartParser, FormParser])
 @csrf_exempt
 def file_upload_view(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         file_serializer = FileSerializer(data=request.data)
         if file_serializer.is_valid():
             file_serializer.save()
             return Response(file_serializer.data, status=status.HTTP_201_CREATED)
         return Response(file_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    return Response({"detail": "Method GET not allowed. Please use POST to upload a file."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
- 
+    return Response(
+        {"detail": "Method GET not allowed. Please use POST to upload a file."},
+        status=status.HTTP_405_METHOD_NOT_ALLOWED,
+    )
